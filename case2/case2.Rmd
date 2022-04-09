@@ -1,0 +1,227 @@
+---
+title: 'Case Study #2: Finacial Report (2015-2017)'
+author: "Devin Masiak"
+date: "4/8/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+data <- read_csv("casestudy.csv")
+```
+
+```{r functions, include=FALSE}
+total_customers <- function(data, current_year) {
+  if (is.na(current_year))
+  {
+    return(NA)
+  }
+  output_tibble <- data %>%
+    filter(year==current_year) %>%
+    summarize(customers = n())
+  return(formatC(output_tibble$customers, format="f", digits=0, big.mark=","))
+}
+
+total_revenue <- function(data, current_year) {
+  if (is.na(current_year))
+  {
+    return(NA)
+  }
+  output_tibble <- data %>%
+    filter(year==current_year) %>%
+    summarize(total_rev = sum(net_revenue))
+  return(formatC(output_tibble$total_rev, format="f",digits=0, big.mark=","))
+}
+
+new_customer_total <- function(data, current_year, previous_year) {
+  if (is.na(previous_year))
+  {
+    return(total_customers(data, current_year))
+  }
+  output_tibble <- data %>%
+    filter(year==current_year | year==previous_year) %>%
+    group_by(customer_email) %>%
+    mutate(count = n()) %>%
+    ungroup() %>%
+    filter(year==current_year, count==1) %>%
+    summarize(new_customers = n())
+  return(formatC(output_tibble$new_customers, format="f", digits=0, big.mark=","))
+}
+
+new_customer_rev <- function(data, current_year, previous_year) {
+  if (is.na(previous_year))
+  {
+    return(total_revenue(data, current_year))
+  }
+  output_tibble <- data %>%
+    filter(year==current_year | year==previous_year) %>%
+    group_by(customer_email) %>%
+    mutate(count = n()) %>%
+    ungroup() %>%
+    filter(year==current_year, count==1) %>%
+    summarize(new_rev = sum(net_revenue))
+  return(formatC(output_tibble$new_rev, format="f", digits=0, big.mark=","))
+}
+# returns list of existing rev for both years
+existing_rev <- function(data, current_year, previous_year) {
+  if (is.na(previous_year))
+  {
+    return(c(NA,NA))
+  }
+  output_tibble <- data %>%
+    filter(year==current_year | year==previous_year) %>%
+    group_by(customer_email) %>%
+    mutate(count = n()) %>%
+    ungroup() %>%
+    filter(count==2) %>%
+    group_by(year) %>%
+    summarize(existing_rev = sum(net_revenue))
+  return(output_tibble$existing_rev)
+}
+
+lost_customer_total <- function(data, current_year, previous_year) {
+    if (is.na(previous_year))
+  {
+    return(NA)
+  }
+  output_tibble <- data %>%
+    filter(year==current_year | year==previous_year) %>%
+    group_by(customer_email) %>%
+    mutate(count = n()) %>%
+    ungroup() %>%
+    filter(year==previous_year, count==1) %>%
+    summarize(lost_customers = n())
+  return(formatC(output_tibble$lost_customers, format="f", digits=0, big.mark=","))
+}
+
+lost_customer_rev <- function(data, current_year, previous_year) {
+  if (is.na(previous_year))
+  {
+    return(NA)
+  }
+  output_tibble <- data %>%
+    filter(year==current_year | year==previous_year) %>%
+    group_by(customer_email) %>%
+    mutate(count = n()) %>%
+    ungroup() %>%
+    filter(year==previous_year, count==1) %>%
+    summarize(lost_rev = sum(net_revenue))
+  return(formatC(output_tibble$lost_rev, format="f", digits=0, big.mark=","))
+}
+```
+
+
+```{r, include=FALSE}
+current_year <- 2015
+prev_year <- NA
+yearly_revenue <- data %>% existing_rev(current_year,prev_year)
+```
+## 2015
+Total Revenue = `r data %>% total_revenue(current_year)`
+
+New Customer Revenue = `r data %>% new_customer_rev(current_year, prev_year)`
+
+Existing Customer Growth = `r NA #formatC throws error on NA`
+
+Revenue Lost from Attrition = `r NA #formatC throws error on NA`
+
+Existing Customer Revenue Current Year = `r NA #formatC throws error on NA`
+
+Existing Customer Revenue Prior Year = `r NA #formatC throws error on NA`
+
+Total Customers Current Year = `r data %>% total_customers(current_year)`
+
+Total Customers Previous Year = `r data %>% total_customers(prev_year)`
+
+New Customers = `r data %>% new_customer_total(current_year, prev_year)`
+
+Lost Customers = `r data %>% lost_customer_total(current_year, prev_year)`
+
+
+```{r, include=FALSE}
+current_year <- 2016
+prev_year <- 2015
+yearly_revenue <- data %>% existing_rev(current_year,prev_year)
+```
+## 2016
+Total Revenue = `r data %>% total_revenue(current_year)`
+
+New Customer Revenue = `r data %>% new_customer_rev(current_year, prev_year)`
+
+Existing Customer Growth = `r formatC(yearly_revenue[2]-yearly_revenue[1], format="f", digits=0, big.mark=",")`
+
+Revenue Lost from Attrition = `r formatC(as.numeric(gsub(',', '', data %>% lost_customer_rev(current_year, prev_year))) - as.numeric(gsub(',', '', data %>% new_customer_rev(current_year, prev_year))), format="f", digits=0, big.mark=",")`
+
+Existing Customer Revenue Current Year = `r formatC(yearly_revenue[2], format="f", digits=0, big.mark=",")`
+
+Existing Customer Revenue Prior Year = `r formatC(yearly_revenue[1], format="f", digits=0, big.mark=",")`
+
+Total Customers Current Year = `r data %>% total_customers(current_year)`
+
+Total Customers Previous Year = `r data %>% total_customers(prev_year)`
+
+New Customers = `r data %>% new_customer_total(current_year, prev_year)`
+
+Lost Customers = `r data %>% lost_customer_total(current_year, prev_year)`
+
+```{r, include=FALSE}
+current_year <- 2017
+prev_year <- 2016
+yearly_revenue <- data %>% existing_rev(current_year,prev_year)
+```
+## 2017
+Total Revenue = `r data %>% total_revenue(current_year)`
+
+New Customer Revenue = `r data %>% new_customer_rev(current_year, prev_year)`
+
+Existing Customer Growth = `r formatC(yearly_revenue[2]-yearly_revenue[1], format="f", digits=0, big.mark=",")`
+
+Revenue Lost from Attrition = `r formatC(as.numeric(gsub(',', '', data %>% lost_customer_rev(current_year, prev_year))) - as.numeric(gsub(',', '', data %>% new_customer_rev(current_year, prev_year))), format="f", digits=0, big.mark=",")`
+
+Existing Customer Revenue Current Year = `r formatC(yearly_revenue[2], format="f", digits=0, big.mark=",")`
+
+Existing Customer Revenue Prior Year = `r formatC(yearly_revenue[1], format="f", digits=0, big.mark=",")`
+
+Total Customers Current Year = `r data %>% total_customers(current_year)`
+
+Total Customers Previous Year = `r data %>% total_customers(prev_year)`
+
+New Customers = `r data %>% new_customer_total(current_year, prev_year)`
+
+Lost Customers = `r data %>% lost_customer_total(current_year, prev_year)`
+
+## Dataset Plots
+An interesting observation about this dataset is that the distribution of net revenue from customers is largely uniform. The only exceptions occur at the extreme ends of the range. I assume this is most likely a result of the data being randomly generated.
+```{r, echo=FALSE, message=FALSE}
+data %>%
+  ggplot(aes(x=net_revenue, label=year)) +
+  geom_histogram() +
+  facet_wrap(~year) +
+  labs(
+      title = "Distribution of Customer Net Revenue",
+      x = "Net Revenue",
+      y = "Number of Customers"
+    ) +
+  theme_minimal()
+```
+
+It's also interesting to look at distribution of how long customers stay with the company. Only ~11% of customers remained all 3 years, while a whopping ~62% only signed up for a single year.
+
+```{r, echo=FALSE, message=FALSE}
+total <- nrow(data)
+data %>%
+  group_by(customer_email) %>%
+  mutate(count = n()) %>%
+  ungroup() %>%
+  group_by(count) %>%
+  summarize(perc=n()/total*100) %>%
+  ggplot(aes(x = as.factor(count), y = perc)) +
+  geom_bar(stat = "identity") +
+  labs(
+      title = "Customer Retention",
+      caption = "Data from 2015 to 2017",
+      x = "Number of years",
+      y = "Percent"
+    ) +
+  theme_minimal()
+```
